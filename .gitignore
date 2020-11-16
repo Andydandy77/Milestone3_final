@@ -1,0 +1,7 @@
+QueryRunner.iml
+build/
+build.xml
+lib/
+manifest.mf
+nbproject/
+/src/queryrunner/.idea/
