@@ -8,6 +8,7 @@ package queryrunner;
 import java.io.Console;
 import java.util.ArrayList;
 import java.util.Scanner;
+import queryrunner.CommandLineTable;
 
 /**
  *
@@ -58,7 +59,12 @@ public class QueryRunner {
 
         m_queryArray.add(new QueryData("SELECT result, count(people_id) as number FROM People group by result;  ", null, null, false, false));
 
-        m_queryArray.add(new QueryData("SELECT COUNT(case_id) AS Treatment FROM mm_cpsc502102team04.Cases WHERE status = 'recovered' AND treatment_method_id = ?", new String [] {"TREATMENT_ID"}, new boolean [] {false}, false, true));
+        m_queryArray.add(new QueryData("SELECT Count_Suc, Count_All, Count_Suc / Count_All AS Suc_rate, " +
+                "Treatments.treatment_method_id, treatment_name FROM (SELECT COUNT(treatment_method_id) AS Count_Suc, " +
+                "treatment_method_id FROM Cases WHERE status = 'recovered' GROUP BY treatment_method_id) AS x JOIN " +
+                "(SELECT COUNT(treatment_method_id) AS Count_All, treatment_method_id FROM Cases GROUP BY treatment_method_id) " +
+                "AS y ON x.treatment_method_id = y.treatment_method_id JOIN Treatments ON y.treatment_method_id = " +
+                "Treatments.treatment_method_id;\n", new String [] {}, new boolean [] {false}, false, true));
 
         m_queryArray.add(new QueryData("SELECT AVG(2020 - YEAR(dob)) as average_deceased_age FROM Personal_Information p JOIN Cases c USING (people_id) WHERE status = 'deceased';", null, null, false, false));
 
@@ -67,6 +73,12 @@ public class QueryRunner {
 
         m_queryArray.add(new QueryData("SELECT h.hospital_name, s.item_id, s.inventory, i.item_name, i.description FROM Supply s INNER JOIN Hospitals h ON h.hospital_id = s.hospital_id " +
                 "INNER JOIN Item_Description i ON i.item_id = s.item_id WHERE s.inventory <= ? ", new String [] {"LOW INVENTORY"}, new boolean [] {false}, false, true));
+
+        m_queryArray.add(new QueryData("INSERT INTO `Checkins` (`people_id`, `business_id`, `date`, `checkins_id`) values(?,?,?,?)",new String [] {"people_id", "business_id", "date", "checkins_id"}, new boolean [] {false, false, false}, true, true));
+
+        m_queryArray.add(new QueryData("UPDATE `Cases` SET `status` = ? WHERE (`case_id` = ?)",new String [] {"status", "case_id"}, new boolean [] {false, false, false}, true, true));
+
+        m_queryArray.add(new QueryData("SELECT status, lname, fname, people_id FROM Cases join Personal_Information using(people_id) where (people_id = ?)",new String [] {"people_id"}, new boolean [] {false}, true, true));
 
 
         // THIS NEEDS TO CHANGE FOR YOUR APPLICATION
@@ -189,6 +201,52 @@ public class QueryRunner {
         return m_error;
     }
 
+    public void ShowQueries() {
+        System.out.println("Connected to Database!");
+        System.out.println("Queries displayed below: \n");
+
+
+        for (int i = 0; i < this.GetTotalQueries(); i++) {
+            System.out.println(i + 1 + ". " + this.GetQueryText(i));
+        }
+    }
+
+    public void RunUserInputQuery() {
+        String [] parmstring={};
+        String [] headers;
+        String [][] allData;
+        boolean Ok=true;
+
+        Scanner userIn = new Scanner(System.in);
+        System.out.print("Query to run: ");
+        int queryNum = Integer.parseInt(userIn.nextLine());
+
+        if (this.isParameterQuery(queryNum)) {
+
+
+        } else if (this.isActionQuery(queryNum)) {
+
+
+        } else {
+            Ok = this.ExecuteQuery(queryNum, parmstring);
+        }
+        if (Ok) {
+            headers = this.GetQueryHeaders();
+            allData = this.GetQueryData();
+
+            CommandLineTable results = new CommandLineTable();
+            results.setShowVerticalLines(true);
+            results.setHeaders(headers);
+            int numResults = allData.length;
+            for (int j = 0; j < numResults; j++) {
+                results.addRow(allData[j]);
+            }
+            results.print();
+        }
+    }
+
+
+
     private QueryJDBC m_jdbcData;
     private String m_error;
     private String m_projectTeamApplication;
@@ -207,67 +265,86 @@ public class QueryRunner {
         String hostname;
         final QueryRunner queryrunner = new QueryRunner();
         boolean console = false;
-        //if (args.length == 0)
-        if (console == false)
-        {
+        if (args.length == 0) {
             java.awt.EventQueue.invokeLater(new Runnable() {
                 public void run() {
 
                     new QueryFrame(queryrunner).setVisible(true);
                 }
             });
-        }
-        else
-        {
-            //if (args[0].equals ("-console"))
-            //{
+        } else {
+            if (args[0].equals("-console")) {
 
                 //System.out.println("Nothing has been implemented yet. Please implement the necessary code");
-                System.out.println("Connect to database using consol");
-                hostname = con.readLine("Enter hostname: ");
-                // TODO
-                // You should code the following functionality:
+                System.out.println("Connect to database using console");
+                boolean connect = queryrunner.Connect("", "", "", "");
+                if (!connect) {
+                    System.out.println("Connection failed!");
 
-                //    You need to determine if it is a parameter query. If it is, then
-                //    you will need to ask the user to put in the values for the Parameters in your query
-                //    you will then call ExecuteQuery or ExecuteUpdate (depending on whether it is an action query or regular query)
-                //    if it is a regular query, you should then get the data by calling GetQueryData. You should then display this
-                //    output. 
-                //    If it is an action query, you will tell how many row's were affected by it.
-                // 
-                //    This is Psuedo Code for the task:  
-                //    Connect()
-                //    n = GetTotalQueries()
-                //    for (i=0;i < n; i++)
-                //    {
-                //       Is it a query that Has Parameters
-                //       Then
-                //           amt = find out how many parameters it has
-                //           Create a paramter array of strings for that amount
-                //           for (j=0; j< amt; j++)
-                //              Get The Paramater Label for Query and print it to console. Ask the user to enter a value
-                //              Take the value you got and put it into your parameter array
-                //           If it is an Action Query then
-                //              call ExecuteUpdate to run the Query
-                //              call GetUpdateAmount to find out how many rows were affected, and print that value
-                //           else
-                //               call ExecuteQuery 
-                //               call GetQueryData to get the results back
-                //               print out all the results
-                //           end if
-                //      }
-                //    Disconnect()
+                } else {
+
+                    queryrunner.ShowQueries();
+                    String[] parmstring = {};
+                    String[] headers;
+                    String[][] allData;
+                    boolean Ok = true;
+
+                    queryrunner.RunUserInputQuery();
+
+                    Scanner userIn = new Scanner(System.in);
+
+                    System.out.print("Type 'exit' to quit, anything else to continue: ");
+                    while (!userIn.nextLine().equals("exit")){
+                        queryrunner.RunUserInputQuery();
+                        System.out.print("Type 'exit' to quit, anything else to continue: ");
+
+                    }
+                    System.out.println("Thanks for using the COVID Tracking system!");
 
 
-                // NOTE - IF THERE ARE ANY ERRORS, please print the Error output
-                // NOTE - The QueryRunner functions call the various JDBC Functions that are in QueryJDBC. If you would rather code JDBC
-                // functions directly, you can choose to do that. It will be harder, but that is your option.
-                // NOTE - You can look at the QueryRunner API calls that are in QueryFrame.java for assistance. You should not have to 
-                //    alter any code in QueryJDBC, QueryData, or QueryFrame to make this work.
+                        // TODO
+                        // You should code the following functionality:
+
+                        //    You need to determine if it is a parameter query. If it is, then
+                        //    you will need to ask the user to put in the values for the Parameters in your query
+                        //    you will then call ExecuteQuery or ExecuteUpdate (depending on whether it is an action query or regular query)
+                        //    if it is a regular query, you should then get the data by calling GetQueryData. You should then display this
+                        //    output.
+                        //    If it is an action query, you will tell how many row's were affected by it.
+                        //
+                        //    This is Psuedo Code for the task:
+                        //    Connect()
+                        //    n = GetTotalQueries()
+                        //    for (i=0;i < n; i++)
+                        //    {
+                        //       Is it a query that Has Parameters
+                        //       Then
+                        //           amt = find out how many parameters it has
+                        //           Create a paramter array of strings for that amount
+                        //           for (j=0; j< amt; j++)
+                        //              Get The Paramater Label for Query and print it to console. Ask the user to enter a value
+                        //              Take the value you got and put it into your parameter array
+                        //           If it is an Action Query then
+                        //              call ExecuteUpdate to run the Query
+                        //              call GetUpdateAmount to find out how many rows were affected, and print that value
+                        //           else
+                        //               call ExecuteQuery
+                        //               call GetQueryData to get the results back
+                        //               print out all the results
+                        //           end if
+                        //      }
+                        //    Disconnect()
+
+
+                        // NOTE - IF THERE ARE ANY ERRORS, please print the Error output
+                        // NOTE - The QueryRunner functions call the various JDBC Functions that are in QueryJDBC. If you would rather code JDBC
+                        // functions directly, you can choose to do that. It will be harder, but that is your option.
+                        // NOTE - You can look at the QueryRunner API calls that are in QueryFrame.java for assistance. You should not have to
+                        //    alter any code in QueryJDBC, QueryData, or QueryFrame to make this work.
 //                System.out.println("Please write the non-gui functionality");
 
-            //}
+                    }
+                }
+            }
         }
-
     }
-}
