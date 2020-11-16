@@ -33,9 +33,49 @@ public class QueryFrame extends javax.swing.JFrame {
         // If it is a grid query, then enable jtable
         int nAmt = m_queryrunner.GetTotalQueries();
 
-        for (int i=0; i < nAmt; i++)
-        {
-            this.jComboBoxQuery.addItem("Query " + (i+1));
+        for (int i=0; i < nAmt; i++) {
+            if(i == 0){
+                this.jComboBoxQuery.addItem("Show all active patients");
+            }
+            else if (i == 1){
+                this.jComboBoxQuery.addItem("Show high risk places");
+            }
+            else if (i == 2){
+                this.jComboBoxQuery.addItem("Hospital Inventory");
+            }
+            else if (i == 3){
+                this.jComboBoxQuery.addItem("Active by State");
+            }
+            else if (i == 4){
+                this.jComboBoxQuery.addItem("Current case static");
+            }
+            else if (i == 5){
+                this.jComboBoxQuery.addItem("Current positive static");
+            }
+            else if (i == 6){
+                this.jComboBoxQuery.addItem("Treatment static");
+            }
+            else if (i == 7){
+                this.jComboBoxQuery.addItem("Average death age");
+            }
+            else if (i == 8){
+                this.jComboBoxQuery.addItem("Highest recovery State");
+            }
+            else if (i == 9){
+                this.jComboBoxQuery.addItem("Inventory check");
+            }
+            else if (i == 10){
+                this.jComboBoxQuery.addItem("Check-in");
+            }
+            else if (i == 11){
+                this.jComboBoxQuery.addItem("Status update");
+            }
+            else if (i == 12){
+                this.jComboBoxQuery.addItem("Patient Status");
+            } else{
+                this.jComboBoxQuery.addItem("Query " + (i + 1));
+            }
+
         }
         jComboBoxQuery.setEnabled(false);
         jBtnRunQuery.setEnabled(false);
@@ -272,8 +312,53 @@ public class QueryFrame extends javax.swing.JFrame {
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
         
         jTextArea2.setText("");
-        String szChoice = (String)jComboBoxQuery.getSelectedItem();        
-        String szStripChoice = szChoice.substring(6);
+        String szChoice = (String)jComboBoxQuery.getSelectedItem();
+
+        String szStripChoice;
+        if(szChoice.equals("Show all active patients")){
+            szChoice ="Query 1";
+        }
+        else if (szChoice.equals("Show high risk places")){
+            szChoice ="Query 2";
+        }
+        else if (szChoice.equals("Hospital Inventory")){
+            szChoice ="Query 3";
+        }
+        else if (szChoice.equals("Active by State")){
+            szChoice ="Query 4";
+        }
+        else if (szChoice.equals("Current case static")){
+            szChoice ="Query 5";
+        }
+        else if (szChoice.equals("Current positive static")){
+            szChoice ="Query 6";
+        }
+        else if (szChoice.equals("Treatment static")){
+            szChoice ="Query 7";
+        }
+        else if (szChoice.equals("Average death age")){
+            szChoice ="Query 8";
+        }
+        else if (szChoice.equals("Highest recovery State")){
+            szChoice ="Query 9";
+        }
+        else if (szChoice.equals("Inventory check")){
+            szChoice ="Query 10";
+        }
+        else if (szChoice.equals("Check-in")){
+            szChoice ="Query 11";
+        }
+        else if (szChoice.equals("Status update")){
+            szChoice ="Query 12";
+        }
+        else if (szChoice.equals("Patient Status")){
+            szChoice ="Query 13";
+        }
+
+        szStripChoice = szChoice.substring(6);
+
+        //String szStripChoice = szChoice.substring(6);
+
         m_queryChoice = Integer.parseInt(szStripChoice)-1;        
         String szQuery = m_queryrunner.GetQueryText(m_queryChoice);
         this.jTextArea1.setText(szQuery);
